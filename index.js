@@ -28,7 +28,7 @@ const database_weight_insert = (weight, calories) => {
                 console.log(err.message)
                 throw err;
             }
-            console.log(`Inserted: ${date.getMonth()}', '${date.getDay()}', ${weight}, ${calories})`)
+            console.log(`Inserted: '${date.getMonth()}', '${date.getDay()}', ${weight}, ${calories})`)
             });
 }
 
@@ -39,36 +39,24 @@ async function database_weight_retrieve(){
                 console.log(err.message)
                 throw err;
             }
-                resolve (rows);
+                resolve(rows);
             })
     })
 }
 
-database_weight_retrieve().then(res => console.log(res))
 
-
-let weight_plottable = [];
-let weight_list = [];
-
-for (const year of weight_logs){
-    for (const month of year.months){
-        for (const log of month.logs){
-            weight_plottable.push(log.weight)
-            weight_list.push(log)
-        }
+let weight_logs = []
+let weight_plottable = []
+let calories_plottable = []
+database_weight_retrieve().then(logs => {
+    weight_logs = logs;
+    for (const log of logs){
+        weight_plottable.push(log.weight)
+        calories_plottable.push(log.calories)
     }
-}
+})
 
 
-
-for (const year of weight_logs){
-    for (const month of year.months){
-        for (const log of month.logs){
-            weight_plottable.push(log.weight)
-            weight_list.push(log)
-        }
-    }
-}
 
 async function welcome_message() {
     console.log(`
@@ -95,7 +83,9 @@ async function handle_command_input(command){
         await view_weight_prompt();
     }
     else if (command === 'i') {
-        await input_weight();
+        const weight   = await input_weight();
+        const calories = await input_calories();
+        database_weight_insert(weight, calories);
     }
 }
 
@@ -119,7 +109,23 @@ async function view_weight_prompt(){
 }
 
 async function input_weight(){
-    
+    const input = await inquirer.prompt({
+        name:    "weight_input",
+        type:    "input",
+        message: "enter your weight for today",
+    })
+
+    return input.weight_input; 
+}
+
+async function input_calories(){
+    const input = await inquirer.prompt({
+        name:    "calories_input",
+        type:    "input",
+        message: "enter your calories consumed today"
+    })
+
+    return input.calories_input;
 }
 
 // What is top level await
