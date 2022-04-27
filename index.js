@@ -1,18 +1,28 @@
 #!/usr/bin.env node
 
+// imports and global variable declartions
+
 import sqlite3    from 'sqlite3';
 import inquirer   from 'inquirer';
 import asciichart from 'asciichart';
+
+const date = new Date;
+const day = date.getDate();
+const month = date.toLocaleDateString(undefined, {month: 'short'});
+const year = date.getFullYear().toString();
+let weight_logs = []
+let weight_plottable = []
+let calories_plottable = []
+
+// connect to database and create if it does not exist
 
 const db = new sqlite3.Database('weight_log',(err) => {
     if (err) console.log(err.message)
     console.log("connected to database")
 })
 
-let date = new Date;
-
 db.serialize(() => {
-    db.run(`CREATE TABLE IF NOT EXISTS "${date.getFullYear().toString()}"(month text, day text, weight integer, calories integer)`, (err) => {
+    db.run(`CREATE TABLE IF NOT EXISTS "${year}"(month text, day text, weight integer, calories integer)`, (err) => {
         if (err) {
             console.log(err.message);
             throw err;
@@ -20,21 +30,23 @@ db.serialize(() => {
     })
 })
 
+
+// database functions
+
 const database_weight_insert = (weight, calories) => {
-        db.run(`INSERT INTO '${date.getFullYear().toString()}'(month, day,  weight, calories)
-        VALUES('${date.getMonth()}', '${date.getDay()}', ${weight}, ${calories})`, 
+        db.run(`INSERT INTO '${year}'(month, day, weight, calories)
+        VALUES('${month}', '${day}', ${weight}, ${calories})`, 
         (err) => {
             if (err) {
                 console.log(err.message)
                 throw err;
             }
-            console.log(`Inserted: '${date.getMonth()}', '${date.getDay()}', ${weight}, ${calories})`)
-            });
+            console.log(`Inserted: ${month} ${day} ${weight} ${calories}`)});
 }
 
-async function database_weight_retrieve(){
+async function retrieve_database_weight(){
     return new Promise ((resolve, reject) => {
-        db.all(`SELECT * FROM '${date.getFullYear().toString()}'`, (err, rows) => {
+        db.all(`SELECT * FROM '${year}'`, (err, rows) => {
             if (err) {
                 console.log(err.message)
                 throw err;
@@ -44,19 +56,7 @@ async function database_weight_retrieve(){
     })
 }
 
-
-let weight_logs = []
-let weight_plottable = []
-let calories_plottable = []
-database_weight_retrieve().then(logs => {
-    weight_logs = logs;
-    for (const log of logs){
-        weight_plottable.push(log.weight)
-        calories_plottable.push(log.calories)
-    }
-})
-
-
+// cli interface functions
 
 async function welcome_message() {
     console.log(`
@@ -104,15 +104,17 @@ async function view_weight_prompt(){
         console.log(asciichart.plot(weight_plottable, {height: 10}))
     }
     else if (parsed_choice === "l"){
-        console.log(weight_logs)
+        print_formatted_logs(weight_logs)
     }
 }
+
+// input functions
 
 async function input_weight(){
     const input = await inquirer.prompt({
         name:    "weight_input",
         type:    "input",
-        message: "enter your weight for today",
+        message: "Enter your weight for today: ",
     })
 
     return input.weight_input; 
@@ -122,13 +124,30 @@ async function input_calories(){
     const input = await inquirer.prompt({
         name:    "calories_input",
         type:    "input",
-        message: "enter your calories consumed today"
+        message: "Enter your calories consumed today: "
     })
 
     return input.calories_input;
 }
 
-// What is top level await
+// formatting functions
+
+const print_formatted_logs = (logs) => {
+    for (const log of logs){
+        console.log(`${log.month} ${log.day} Weight: ${log.weight} Calories: ${log.calories}`)
+    }
+} 
+
+// main
+
+
+retrieve_database_weight().then(logs => {
+    weight_logs = logs;
+    for (const log of logs){
+        weight_plottable.push(log.weight)
+        calories_plottable.push(log.calories)
+    }
+})
 
 await welcome_message();
 await command_interface();
