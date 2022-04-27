@@ -40,8 +40,7 @@ const database_weight_insert = (weight, calories) => {
             if (err) {
                 console.log(err.message)
                 throw err;
-            }
-            console.log(`Inserted: ${month} ${day} ${weight} ${calories}`)});
+            }});
 }
 
 async function retrieve_database_weight(){
@@ -59,9 +58,7 @@ async function retrieve_database_weight(){
 // cli interface functions
 
 async function welcome_message() {
-    console.log(`
-        Hello Johnny
-    `)
+    console.log(`Hello Johnny`)
 }
 
 async function command_interface(){
@@ -71,7 +68,8 @@ async function command_interface(){
         message: "What would you like to do?",
         choices: [
             "w : view your weight",
-            "i : input your daily weight"
+            "i : input your daily weight",
+            "q : quit"
         ]
     });
 
@@ -86,6 +84,11 @@ async function handle_command_input(command){
         const weight   = await input_weight();
         const calories = await input_calories();
         database_weight_insert(weight, calories);
+        console.log(`Inserted: ${month} ${day} ${weight} ${calories}`)
+        command_interface()
+    }
+    else {
+        return;
     }
 }
 
@@ -100,11 +103,14 @@ async function view_weight_prompt(){
         ]
     })
     const parsed_choice = choice.view_weight_choice.charAt(0);
+
     if (parsed_choice === "c"){
         console.log(asciichart.plot(weight_plottable, {height: 10}))
+        command_interface()
     }
     else if (parsed_choice === "l"){
         print_formatted_logs(weight_logs)
+        command_interface()
     }
 }
 
