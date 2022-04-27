@@ -1,37 +1,73 @@
 #!/usr/bin.env node
 
-import inquirer from 'inquirer';
+import sqlite3    from 'sqlite3';
+import inquirer   from 'inquirer';
 import asciichart from 'asciichart';
 
+const db = new sqlite3.Database('weight_log',(err) => {
+    if (err) console.log(err.message)
+    console.log("connected to database")
+})
+
+let date = new Date;
+
+db.serialize(() => {
+    db.run(`CREATE TABLE IF NOT EXISTS "${date.getFullYear().toString()}"(month text, day text, weight integer, calories integer)`, (err) => {
+        if (err) {
+            console.log(err.message);
+            throw err;
+        }
+    })
+})
+
+const database_weight_insert = (weight, calories) => {
+        db.run(`INSERT INTO '${date.getFullYear().toString()}'(month, day,  weight, calories)
+        VALUES('${date.getMonth()}', '${date.getDay()}', ${weight}, ${calories})`, 
+        (err) => {
+            if (err) {
+                console.log(err.message)
+                throw err;
+            }
+            console.log(`Inserted: ${date.getMonth()}', '${date.getDay()}', ${weight}, ${calories})`)
+            });
+}
+
+async function database_weight_retrieve(){
+    return new Promise ((resolve, reject) => {
+        db.all(`SELECT * FROM '${date.getFullYear().toString()}'`, (err, rows) => {
+            if (err) {
+                console.log(err.message)
+                throw err;
+            }
+                resolve (rows);
+            })
+    })
+}
+
+database_weight_retrieve().then(res => console.log(res))
 
 
-const weights = {
-    2022: {
-        jan: [
-            {weight: 172 ,  date: new Date()},
-            {weight: 169 ,  date: new Date()},
-            {weight: 177 ,  date: new Date()},
-            {weight: 157 ,  date: new Date()},
-            {weight: 197 ,  date: new Date()},
-            {weight: 127 ,  date: new Date()}
-        ],
-        feb: [
-            {weight: 172 ,  date: new Date()},
-            {weight: 169 ,  date: new Date()},
-            {weight: 177 ,  date: new Date()},
-            {weight: 157 ,  date: new Date()},
-            {weight: 197 ,  date: new Date()},
-            {weight: 127 ,  date: new Date()}
-        ]
+let weight_plottable = [];
+let weight_list = [];
+
+for (const year of weight_logs){
+    for (const month of year.months){
+        for (const log of month.logs){
+            weight_plottable.push(log.weight)
+            weight_list.push(log)
+        }
     }
 }
 
 
 
-let weightArr = [];
-
-for (const month of mock_weights){
-    weightArr.push(weight.weight)
+for (const year of weight_logs){
+    for (const month of year.months){
+        for (const log of month.logs){
+            weight_plottable.push(log.weight)
+            weight_list.push(log)
+        }
+    }
 }
 
 async function welcome_message() {
@@ -75,10 +111,10 @@ async function view_weight_prompt(){
     })
     const parsed_choice = choice.view_weight_choice.charAt(0);
     if (parsed_choice === "c"){
-        console.log(asciichart.plot(weightArr, {height: 10}))
+        console.log(asciichart.plot(weight_plottable, {height: 10}))
     }
     else if (parsed_choice === "l"){
-        console.log(mock_weights)
+        console.log(weight_logs)
     }
 }
 

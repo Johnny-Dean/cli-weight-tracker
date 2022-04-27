@@ -12,6 +12,7 @@
   "license": "ISC",
   "dependencies": {
     "asciichart": "^1.5.25",
-    "inquirer": "^8.2.2"
+    "inquirer": "^8.2.2",
+    "sqlite3": "^5.0.5"
   }
 }
